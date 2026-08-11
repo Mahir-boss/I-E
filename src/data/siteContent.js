@@ -410,6 +410,8 @@ export const ocMembers = [
   { name: 'Shubham Dalvi', linkedin: '#' },
   { name: 'Siddhant Shele', linkedin: '#' },
   { name: 'Vedant', linkedin: '#' },
-  { name: 'Abdullah Shaikh', linkedin: 'linkedin.com/in/abdullah-shaikh-2a5144373'}
+  { name: 'Abdullah Shaikh', linkedin: 'linkedin.com/in/abdullah-shaikh-2a5144373'},
+  { name: 'Juee Matkar', linkedin: '#'},
+  { name: 'Diksha', linkedin: '#'}
 ];
 

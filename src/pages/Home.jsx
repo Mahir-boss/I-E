@@ -111,13 +111,13 @@ export default function Home() {
             <div className="relative overflow-hidden rounded-lg border border-electric/10 bg-cloud p-0 shadow-soft">
               <div className="absolute -right-8 -top-8 size-32 rounded-full bg-flare/30 blur-2xl" />
               <div className="absolute -bottom-10 -left-8 size-36 rounded-full bg-electric/20 blur-2xl" />
-              
+
               <AnimatedIELogo className="relative z-10 block aspect-[2/1] w-full" />
 
               {/* Overlay Top-Left: Parent Organizations Logos (Theme Matched) */}
               <div className="absolute left-3 top-3 z-20 flex gap-1.5 sm:left-5 sm:top-5 sm:gap-2.5">
                 <div className="bg-black p-0.5 sm:p-1.5 rounded border border-electric/20 shadow-[0_4px_12px_rgba(201,160,62,0.12)] h-7 w-auto sm:h-11 md:h-14 lg:h-16 flex items-center justify-center">
-                   <img
+                  <img
                     src="/assets/logos/Atharva_University_Logo.webp"
                     alt="Atharva University"
                     width="80"
