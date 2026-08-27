@@ -28,6 +28,7 @@ const Initiatives = lazy(() => import('./pages/Initiatives.jsx'));
 const EventArchive = lazy(() => import('./pages/EventArchive.jsx'));
 const Gallery = lazy(() => import('./pages/Gallery.jsx'));
 const Team = lazy(() => import('./pages/Team.jsx'));
+const BoardroomBillionaires = lazy(() => import('./pages/BoardroomBillionaires/BoardroomBillionairesPage.jsx'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -85,6 +86,7 @@ export default function App() {
                 <Route path="/initiatives/:eventId" element={<EventArchive />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/team" element={<Team />} />
+                <Route path="/boardroom-billionaires" element={<BoardroomBillionaires />} />
               </Routes>
             </Suspense>
           </main>

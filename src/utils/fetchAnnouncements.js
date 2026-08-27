@@ -1,14 +1,14 @@
 export const DEFAULT_ANNOUNCEMENTS = [
   {
     title: 'Boardroom Billionaires',
-    tag: 'Flagship Event',
+    tag: 'Entrepreneurship Event',
     subtext: 'The ultimate entrepreneurial showdown. Pitch your business models, negotiate with mock venture capitalists, and navigate critical boardroom crises to claim the crown.',
     image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
-    date: '28th August 2026',
-    time: '10:00 AM',
+    date: '30th Sept & 1st Oct',
+    time: '11:00 AM',
     venue: 'ACE Auditorium',
     btnText: 'Register Now',
-    btnUrl: 'https://linktr.ee/ie_cell_ace'
+    btnUrl: '/boardroom-billionaires'
   },
   {
     title: 'CiiA-4 Innovations Showcase',
