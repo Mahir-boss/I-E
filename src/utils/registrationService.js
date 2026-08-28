@@ -6,13 +6,63 @@ const DEFAULT_INTERNAL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyB
 const DEFAULT_EXTERNAL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-6D59vesZTj6XyzWG_r-cBxbZA_msHE9m742S8C9dkq6MYALZSKt62e0fbEqSYXOI/exec';
 
 /**
- * Helper to convert File to Base64 string.
+ * Compresses an image file using an HTML5 canvas and converts it to a lightweight Base64 string.
+ * Reduces 5MB-10MB phone camera photos down to crisp ~60KB-80KB JPEGs so Google Drive can decode them instantly.
  */
-function fileToBase64(file) {
+function compressAndEncodeImage(file, maxDimension = 1200, quality = 0.75) {
   return new Promise((resolve, reject) => {
+    // If not an image, fallback to standard FileReader
+    if (!file.type || !file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => {
+        // Fallback to raw base64 if image decoding fails
+        resolve(e.target.result);
+      };
+      img.onload = () => {
+        try {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          // White background for transparency safety
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to clean JPEG
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        } catch (canvasErr) {
+          console.warn('Canvas compression fallback:', canvasErr);
+          resolve(e.target.result);
+        }
+      };
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -30,7 +80,7 @@ export async function submitInternalRegistration(formData) {
     participantName: (formData.participantName || '').trim(),
     contactNo: (formData.contactNo || '').trim(),
     emailId: (formData.emailId || '').trim(),
-    academicYear: formData.academicYear || 'SE',
+    academicYear: formData.academicYear || '',
     branch: formData.branch || 'CMPN',
     collegeName: formData.collegeName || 'Atharva College of Engineering',
     mode: 'Website (ACE)',
@@ -69,7 +119,7 @@ export async function submitInternalRegistration(formData) {
 }
 
 /**
- * Submits external delegate registration details to Google Sheet, including the payment screenshot.
+ * Submits external delegate registration details to Google Sheet, including the compressed payment screenshot.
  * 
  * @param {Object} formData
  * @param {File|null} paymentScreenshot
@@ -82,12 +132,12 @@ export async function submitExternalRegistration(formData, paymentScreenshot) {
     throw new Error('Please upload your payment screenshot before submitting.');
   }
 
-  // Convert screenshot to Base64 for Google Drive upload
+  // Compress screenshot to lightweight Base64 for instant, reliable Google Drive upload
   let screenshotBase64 = null;
   try {
-    screenshotBase64 = await fileToBase64(paymentScreenshot);
+    screenshotBase64 = await compressAndEncodeImage(paymentScreenshot, 1200, 0.75);
   } catch (convErr) {
-    console.warn('Could not encode screenshot to base64:', convErr);
+    console.warn('Could not compress screenshot to base64:', convErr);
   }
 
   const payload = {
@@ -96,10 +146,10 @@ export async function submitExternalRegistration(formData, paymentScreenshot) {
     contactNo: (formData.contactNo || '').trim(),
     emailId: (formData.emailId || '').trim(),
     collegeName: (formData.collegeName || '').trim(),
-    academicYear: formData.academicYear || 'SE',
-    branch: formData.branch || 'CMPN',
+    academicYear: formData.academicYear || '',
+    branch: (formData.branch || '').trim(),
     screenshotName: paymentScreenshot.name || 'payment_screenshot.jpg',
-    screenshotMimeType: paymentScreenshot.type || 'image/jpeg',
+    screenshotMimeType: 'image/jpeg',
     screenshotBase64: screenshotBase64,
     mode: 'Website (External)',
     track: 'external',
