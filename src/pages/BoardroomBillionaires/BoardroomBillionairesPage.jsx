@@ -24,8 +24,11 @@ import {
   Unlock,
   AlertTriangle,
   Download,
-  FileText
+  FileText,
+  Loader2,
+  ChevronDown
 } from 'lucide-react';
+import { submitInternalRegistration, submitExternalRegistration } from '../../utils/registrationService.js';
 
 const googleFormUrls = {
   internal: 'https://docs.google.com/forms/d/e/1FAIpQLSfYwZjqwc2Gu6tMQKlcZYjE2tDpE1tcDfw551QR0xKHAgawXQ/viewform',
@@ -37,6 +40,8 @@ export default function BoardroomBillionairesPage() {
   const selectedTrack = searchParams.get('track'); // 'internal' | 'external' | null
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -49,7 +54,7 @@ export default function BoardroomBillionairesPage() {
     participantName: '',
     contactNo: '',
     emailId: '',
-    academicYear: 'SE',
+    academicYear: '',
     branch: 'CMPN',
     collegeName: ''
   });
@@ -65,7 +70,6 @@ export default function BoardroomBillionairesPage() {
   // Dual Video Ref Loop
   const v1Ref = useRef(null);
   const v2Ref = useRef(null);
-  const wrapRef = useRef(null);
   const isFadingRef = useRef(false);
 
   // Smooth Dual Video Buffer Crossfade & Autoplay Recovery
@@ -124,35 +128,18 @@ export default function BoardroomBillionairesPage() {
     };
   }, []);
 
-  // GPU Parallax Scroll Shift
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (wrapRef.current) {
-            wrapRef.current.style.transform = `translate3d(0, ${window.scrollY * 0.12}px, 0)`;
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const handleTrackSelect = (track) => {
     setSearchParams({ track });
     setSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
     setPaymentScreenshot(null);
     setPaymentScreenshotPreview(null);
     setQrLockWarning(false);
     if (track === 'internal') {
-      setFormData(prev => ({ ...prev, collegeName: 'Atharva College of Engineering' }));
+      setFormData(prev => ({ ...prev, collegeName: 'Atharva College of Engineering', branch: 'CMPN' }));
     } else {
-      setFormData(prev => ({ ...prev, collegeName: '' }));
+      setFormData(prev => ({ ...prev, collegeName: '', branch: '' }));
     }
 
     setTimeout(() => {
@@ -164,6 +151,8 @@ export default function BoardroomBillionairesPage() {
   const handleBackToSelection = () => {
     setSearchParams({});
     setSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
     setPaymentScreenshot(null);
     setPaymentScreenshotPreview(null);
     setQrLockWarning(false);
@@ -202,8 +191,9 @@ export default function BoardroomBillionairesPage() {
     setShowQrModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError(null);
 
     if (selectedTrack === 'external' && !paymentScreenshot) {
       setQrLockWarning(true);
@@ -213,25 +203,40 @@ export default function BoardroomBillionairesPage() {
       return;
     }
 
-    setSubmitted(true);
+    if (selectedTrack === 'internal') {
+      setIsSubmitting(true);
+      try {
+        await submitInternalRegistration(formData);
+        setSubmitted(true);
+      } catch (err) {
+        console.error('Internal submission error:', err);
+        setSubmitError(err.message || 'Failed to submit registration. Please try again or use the official form.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
-    try {
-      localStorage.setItem(`boardroom_reg_${Date.now()}`, JSON.stringify({
-        ...formData,
-        track: selectedTrack,
-        hasScreenshot: !!paymentScreenshot,
-        screenshotName: paymentScreenshot?.name || null
-      }));
-    } catch (err) {
-      console.warn('LocalStorage save failed:', err);
+    if (selectedTrack === 'external') {
+      setIsSubmitting(true);
+      try {
+        await submitExternalRegistration(formData, paymentScreenshot);
+        setSubmitted(true);
+      } catch (err) {
+        console.error('External submission error:', err);
+        setSubmitError(err.message || 'Failed to submit registration. Please try again or use the official form.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-transparent text-[#1c120c] selection:bg-[#4a2e1b] selection:text-[#fcf8f0] overflow-x-hidden font-sans">
+    <div className="relative min-h-screen bg-[#140d08] text-[#1c120c] selection:bg-[#4a2e1b] selection:text-[#fcf8f0] overflow-x-hidden font-sans">
       
       {/* Fixed Dual Video Background at z-0 */}
-      <div ref={wrapRef} className="fixed inset-0 z-0 overflow-hidden bg-[#140d08] pointer-events-none transition-transform duration-100 ease-out">
+      <div className="fixed inset-0 z-0 overflow-hidden bg-[#140d08] pointer-events-none">
         <video
           ref={v1Ref}
           playsInline
@@ -515,6 +520,26 @@ export default function BoardroomBillionairesPage() {
                   )}
                 </AnimatePresence>
 
+                {/* Submission Error Banner */}
+                <AnimatePresence>
+                  {submitError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mb-6 p-4 rounded-xl border-2 border-red-500/80 bg-[#3b1919] text-[#fcf8f0] flex items-start gap-3 shadow-xl"
+                    >
+                      <AlertTriangle className="size-5 text-red-400 shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <span className="font-bold text-red-400 uppercase tracking-wider block mb-0.5">
+                          Submission Error
+                        </span>
+                        {submitError}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {!submitted ? (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
@@ -527,10 +552,11 @@ export default function BoardroomBillionairesPage() {
                           type="text"
                           name="participantName"
                           required
+                          disabled={isSubmitting}
                           value={formData.participantName}
                           onChange={handleInputChange}
                           placeholder="Full Name"
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50"
                         />
                       </div>
 
@@ -543,10 +569,11 @@ export default function BoardroomBillionairesPage() {
                           type="tel"
                           name="contactNo"
                           required
+                          disabled={isSubmitting}
                           value={formData.contactNo}
                           onChange={handleInputChange}
                           placeholder="+91 9876543210"
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50"
                         />
                       </div>
                     </div>
@@ -561,10 +588,11 @@ export default function BoardroomBillionairesPage() {
                           type="email"
                           name="emailId"
                           required
+                          disabled={isSubmitting}
                           value={formData.emailId}
                           onChange={handleInputChange}
                           placeholder="participant@college.edu"
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50"
                         />
                       </div>
 
@@ -573,17 +601,23 @@ export default function BoardroomBillionairesPage() {
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#d3caad] mb-2">
                           Academic Year *
                         </label>
-                        <select
-                          name="academicYear"
-                          value={formData.academicYear}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] focus:border-[#e5c06a] focus:outline-none transition-colors"
-                        >
-                          <option value="FE">First Year (FE)</option>
-                          <option value="SE">Second Year (SE)</option>
-                          <option value="TE">Third Year (TE)</option>
-                          <option value="BE">Final Year (BE)</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            name="academicYear"
+                            required
+                            disabled={isSubmitting}
+                            value={formData.academicYear}
+                            onChange={handleInputChange}
+                            className="w-full appearance-none px-4 py-3 pr-10 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            <option value="" disabled>Select Academic Year</option>
+                            <option value="FE">First Year (FE)</option>
+                            <option value="SE">Second Year (SE)</option>
+                            <option value="TE">Third Year (TE)</option>
+                            <option value="BE">Final Year (BE)</option>
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-[#e5c06a]" />
+                        </div>
                       </div>
                     </div>
 
@@ -593,19 +627,36 @@ export default function BoardroomBillionairesPage() {
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#d3caad] mb-2">
                           Branch *
                         </label>
-                        <select
-                          name="branch"
-                          value={formData.branch}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] focus:border-[#e5c06a] focus:outline-none transition-colors"
-                        >
-                          <option value="CMPN">Computer Engineering (CMPN)</option>
-                          <option value="INFT">Information Technology (INFT)</option>
-                          <option value="ECS">Electronics & Computer Science (ECS)</option>
-                          <option value="EXTC">Electronics & Telecommunication (EXTC)</option>
-                          <option value="ELEC">Electrical Engineering (ELEC)</option>
-                          <option value="Other">Other / Non-ACE Branch</option>
-                        </select>
+                        {selectedTrack === 'internal' ? (
+                          <div className="relative">
+                            <select
+                              name="branch"
+                              disabled={isSubmitting}
+                              value={formData.branch}
+                              onChange={handleInputChange}
+                              className="w-full appearance-none px-4 py-3 pr-10 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <option value="CMPN">Computer Engineering (CMPN)</option>
+                              <option value="INFT">Information Technology (INFT)</option>
+                              <option value="ECS">Electronics & Computer Science (ECS)</option>
+                              <option value="EXTC">Electronics & Telecommunication (EXTC)</option>
+                              <option value="ELEC">Electrical Engineering (ELEC)</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-[#e5c06a]" />
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            name="branch"
+                            required
+                            disabled={isSubmitting}
+                            value={formData.branch}
+                            onChange={handleInputChange}
+                            placeholder="e.g. Mechanical, CS, AI&DS"
+                            className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50"
+                          />
+                        )}
                       </div>
 
                       {/* College Name */}
@@ -613,23 +664,41 @@ export default function BoardroomBillionairesPage() {
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#d3caad] mb-2">
                           College / Institution Name *
                         </label>
-                        <input
-                          type="text"
-                          name="collegeName"
-                          required
-                          readOnly={selectedTrack === 'internal'}
-                          value={formData.collegeName}
-                          onChange={handleInputChange}
-                          placeholder="College Name"
-                          className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors read-only:opacity-75"
-                        />
+                        {selectedTrack === 'internal' ? (
+                          <div className="relative">
+                            <select
+                              name="collegeName"
+                              disabled={isSubmitting}
+                              value={formData.collegeName}
+                              onChange={handleInputChange}
+                              className="w-full appearance-none px-4 py-3 pr-10 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <option value="Atharva College of Engineering">Atharva College of Engineering</option>
+                              <option value="Hotel Management">Hotel Management</option>
+                              <option value="Management Studies">Management Studies</option>
+                              <option value="Atharva University">Atharva University</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-[#e5c06a]" />
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            name="collegeName"
+                            required
+                            disabled={isSubmitting}
+                            value={formData.collegeName}
+                            onChange={handleInputChange}
+                            placeholder="College / Institution Name"
+                            className="w-full px-4 py-3 rounded-lg bg-[#3b2313] border-2 border-[#8c6d3b] text-[#fcf8f0] placeholder:text-[#d3caad]/50 focus:border-[#e5c06a] focus:outline-none transition-colors disabled:opacity-50"
+                          />
+                        )}
                       </div>
                     </div>
 
                     {/* External Track Payment & Screenshot Section */}
                     {selectedTrack === 'external' && (
                       <div className="rounded-xl border-2 border-[#8c6d3b] bg-[#3b2313] p-6 space-y-6">
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-[#8c6d3b]/40">
+                        <div className="flex flex-col sm:row items-center justify-between gap-4 pb-4 border-b border-[#8c6d3b]/40">
                           <div>
                             <span className="text-xs font-bold uppercase tracking-widest text-[#e5c06a]">Payment Gateway</span>
                             <h4 className="font-display text-lg font-black text-[#fcf8f0] mt-0.5">Advance Registration Fee: ₹49</h4>
@@ -719,9 +788,17 @@ export default function BoardroomBillionairesPage() {
 
                     <button
                       type="submit"
-                      className="w-full py-4 rounded-xl bg-[#3b2313] border-2 border-[#8c6d3b] text-[#e5c06a] font-black text-sm uppercase tracking-widest hover:bg-[#2c190e] hover:border-[#e5c06a] transition-all shadow-xl"
+                      disabled={isSubmitting}
+                      className="w-full py-4 rounded-xl bg-[#3b2313] border-2 border-[#8c6d3b] text-[#e5c06a] font-black text-sm uppercase tracking-widest hover:bg-[#2c190e] hover:border-[#e5c06a] transition-all shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Complete Registration
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin text-[#e5c06a]" />
+                          <span>Recording in Google Sheet...</span>
+                        </>
+                      ) : (
+                        <span>Complete Registration</span>
+                      )}
                     </button>
                   </form>
                 ) : (
@@ -731,7 +808,9 @@ export default function BoardroomBillionairesPage() {
                     </div>
                     <h4 className="font-display text-2xl font-black text-[#fcf8f0]">Registration Submitted!</h4>
                     <p className="text-sm text-[#d3caad] max-w-md mx-auto">
-                      Your participant details have been recorded. You can also view or submit directly in the official Google Form portal below:
+                      {selectedTrack === 'internal'
+                        ? 'Your registration has been successfully recorded in the official ACE participant spreadsheet.'
+                        : 'Your participant details have been recorded. Please join the official WhatsApp group below.'}
                     </p>
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
                       <a
