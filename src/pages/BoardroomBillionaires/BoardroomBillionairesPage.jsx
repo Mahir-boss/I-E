@@ -30,11 +30,6 @@ import {
 } from 'lucide-react';
 import { submitInternalRegistration, submitExternalRegistration } from '../../utils/registrationService.js';
 
-const googleFormUrls = {
-  internal: 'https://docs.google.com/forms/d/e/1FAIpQLSfYwZjqwc2Gu6tMQKlcZYjE2tDpE1tcDfw551QR0xKHAgawXQ/viewform',
-  external: 'https://docs.google.com/forms/d/e/1FAIpQLSd4T7qWH_VcFQNjXu9tZRZchlhhqVTYbB6I3prpw4ErnZS5JA/viewform'
-};
-
 export default function BoardroomBillionairesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTrack = searchParams.get('track'); // 'internal' | 'external' | null
@@ -812,19 +807,12 @@ export default function BoardroomBillionairesPage() {
                         ? 'Your registration has been successfully recorded in the official ACE participant spreadsheet.'
                         : 'Your participant details have been recorded. Please join the official WhatsApp group below.'}
                     </p>
-                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                      <a
-                        href={googleFormUrls[selectedTrack]}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-6 py-3 rounded-lg bg-[#e5c06a] text-[#1c120c] font-bold text-xs uppercase tracking-wider hover:bg-[#fcf8f0] transition-colors"
-                      >
-                        Open Official Verification Form →
-                      </a>
+                    <div className="pt-4 flex items-center justify-center">
                       <button
                         onClick={handleQrClick}
-                        className="px-6 py-3 rounded-lg border-2 border-[#8c6d3b] bg-[#3b2313] text-[#fcf8f0] font-bold text-xs uppercase tracking-wider hover:border-[#e5c06a] transition-colors"
+                        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#e5c06a] text-[#1c120c] font-black text-xs uppercase tracking-widest hover:bg-[#fcf8f0] transition-all shadow-lg hover:scale-105"
                       >
+                        <QrCode className="size-4 text-[#1c120c]" />
                         Join WhatsApp Group
                       </button>
                     </div>
