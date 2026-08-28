@@ -284,12 +284,24 @@ export default function BoardroomBillionairesPage() {
               initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="mt-6 relative inline-block"
+              className="mt-6 relative inline-block max-w-full"
             >
-              <div className="px-8 py-4 sm:px-14 sm:py-6 rounded-lg border-4 border-[#3b2313] bg-[#4a2e1b] shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative z-10">
-                <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-black tracking-wider text-[#fcf8f0] uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  BOARDROOM BILLIONAIRES
-                </h1>
+              <div className="px-6 py-3 sm:px-10 sm:py-4 rounded-lg border-4 border-[#3b2313] bg-[#4a2e1b] shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative z-10 flex items-center justify-center gap-2 sm:gap-6">
+                {/* Logo - Scaled Up Boldly */}
+                <div className="shrink-0 flex items-center justify-center -my-6 sm:-my-10">
+                  <img
+                    src="/assets/logos/boardroom_logo.png"
+                    alt="Boardroom Billionaires Logo"
+                    className="w-32 sm:w-44 md:w-52 lg:w-60 h-auto object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)] scale-125 sm:scale-135 transform"
+                  />
+                </div>
+
+                {/* Text */}
+                <div className="text-left pr-2">
+                  <h1 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-wider text-[#fcf8f0] uppercase leading-[1.05] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    BOARDROOM<br />BILLIONAIRES
+                  </h1>
+                </div>
               </div>
               <div className="absolute -inset-1.5 rounded-lg border-2 border-[#8c6d3b] pointer-events-none" />
             </motion.div>
