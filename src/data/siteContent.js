@@ -194,6 +194,13 @@ export const eventSchedule = [
 
 export const initiatives = [
   {
+    id: 'finnoverse',
+    title: 'Finnoverse',
+    image: '/assets/events/FINNOVERSE/Finnoverse Photo 1.webp',
+    description: 'A finance and web3 innovation event combining blockchain, modern finance, and decentralization ideation.',
+    tag: 'Web3 & FinTech',
+  },
+  {
     id: 'mun-2024',
     title: 'MUN 2024',
     image: '/assets/events/MUN 2024/MUN 24 Photo 1.webp',
@@ -206,13 +213,6 @@ export const initiatives = [
     image: '/assets/events/MUN 2025/MUN 25 Photo 1.webp',
     description: 'Continuing the legacy of global policy debate, committee sessions, and diplomatic negotiations at ACE in our 2025 chapter.',
     tag: 'Diplomacy & Policy',
-  },
-  {
-    id: 'finnoverse',
-    title: 'Finnoverse',
-    image: '/assets/events/FINNOVERSE/Finnoverse Photo 1.webp',
-    description: 'A finance and web3 innovation event combining blockchain, modern finance, and decentralization ideation.',
-    tag: 'Web3 & FinTech',
   },
   {
     id: 'model-senate',
@@ -410,8 +410,8 @@ export const ocMembers = [
   { name: 'Shubham Dalvi', linkedin: '#' },
   { name: 'Siddhant Shele', linkedin: '#' },
   { name: 'Vedant', linkedin: '#' },
-  { name: 'Abdullah Shaikh', linkedin: 'linkedin.com/in/abdullah-shaikh-2a5144373'},
-  { name: 'Juee Matkar', linkedin: '#'},
-  { name: 'Diksha', linkedin: '#'}
+  { name: 'Abdullah Shaikh', linkedin: 'linkedin.com/in/abdullah-shaikh-2a5144373' },
+  { name: 'Juee Matkar', linkedin: '#' },
+  { name: 'Diksha', linkedin: '#' }
 ];
 

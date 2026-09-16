@@ -9,7 +9,6 @@ import {
   MapPin, 
   Trophy, 
   ArrowLeft,
-  ArrowRight, 
   CheckCircle2, 
   Phone, 
   TrendingUp,
@@ -18,13 +17,8 @@ import {
   Hotel,
   QrCode,
   X,
-  Upload,
-  Check,
-  Lock,
-  Unlock,
   AlertTriangle,
   Download,
-  FileText,
   Loader2,
   ChevronDown
 } from 'lucide-react';
@@ -38,11 +32,6 @@ export default function BoardroomBillionairesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
-  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
-  const [qrLockWarning, setQrLockWarning] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -128,9 +117,6 @@ export default function BoardroomBillionairesPage() {
     setSubmitted(false);
     setIsSubmitting(false);
     setSubmitError(null);
-    setPaymentScreenshot(null);
-    setPaymentScreenshotPreview(null);
-    setQrLockWarning(false);
     if (track === 'internal') {
       setFormData(prev => ({ ...prev, collegeName: 'Atharva College of Engineering', branch: 'CMPN' }));
     } else {
@@ -148,9 +134,6 @@ export default function BoardroomBillionairesPage() {
     setSubmitted(false);
     setIsSubmitting(false);
     setSubmitError(null);
-    setPaymentScreenshot(null);
-    setPaymentScreenshotPreview(null);
-    setQrLockWarning(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -159,44 +142,13 @@ export default function BoardroomBillionairesPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPaymentScreenshot(file);
-      setQrLockWarning(false);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPaymentScreenshotPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleQrClick = () => {
-    if (selectedTrack === 'external' && !paymentScreenshot && !submitted) {
-      setQrLockWarning(true);
-      setTimeout(() => setQrLockWarning(false), 5000);
-
-      const el = document.getElementById('payment-screenshot-box');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
     setShowQrModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
-
-    if (selectedTrack === 'external' && !paymentScreenshot) {
-      setQrLockWarning(true);
-      setTimeout(() => setQrLockWarning(false), 5000);
-      const el = document.getElementById('payment-screenshot-box');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
 
     if (selectedTrack === 'internal') {
       setIsSubmitting(true);
@@ -215,7 +167,7 @@ export default function BoardroomBillionairesPage() {
     if (selectedTrack === 'external') {
       setIsSubmitting(true);
       try {
-        await submitExternalRegistration(formData, paymentScreenshot);
+        await submitExternalRegistration(formData);
         setSubmitted(true);
       } catch (err) {
         console.error('External submission error:', err);
@@ -482,50 +434,18 @@ export default function BoardroomBillionairesPage() {
                     <p className="text-sm text-[#d3caad] mt-1">
                       {selectedTrack === 'internal'
                         ? 'Fill out your participant details to reserve your seat (Free / ₹0)'
-                        : 'Fill out your delegate details & upload fee payment screenshot (Advance Fee: ₹49)'}
+                        : 'Fill out your delegate details to reserve your seat (Free / ₹0)'}
                     </p>
                   </div>
 
-                  {/* Dynamic WhatsApp Group Button with Lock State */}
+                  {/* WhatsApp Group Button */}
                   <button
                     onClick={handleQrClick}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
-                      selectedTrack === 'external' && !paymentScreenshot && !submitted
-                        ? 'border-[#e5c06a]/70 bg-[#2c190e] text-[#e5c06a] hover:bg-[#3b2313] hover:border-[#e5c06a]'
-                        : 'border-[#8c6d3b] bg-[#3b2313] text-[#e5c06a] hover:bg-[#2c190e]'
-                    }`}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-[#8c6d3b] bg-[#3b2313] text-xs font-bold uppercase tracking-wider text-[#e5c06a] hover:bg-[#2c190e] transition-all shadow-md"
                   >
-                    {selectedTrack === 'external' && !paymentScreenshot && !submitted ? (
-                      <>
-                        <Lock className="size-4 text-[#e5c06a]" /> WhatsApp QR (Locked)
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="size-4 text-[#e5c06a]" /> WhatsApp Group QR
-                      </>
-                    )}
+                    <QrCode className="size-4 text-[#e5c06a]" /> WhatsApp Group QR
                   </button>
                 </div>
-
-                {/* Animated Warning Toast if user clicks locked WhatsApp QR before uploading screenshot */}
-                <AnimatePresence>
-                  {qrLockWarning && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="mb-6 p-4 rounded-xl border-2 border-[#e5c06a] bg-[#3b2313] text-[#fcf8f0] flex items-start gap-3 shadow-xl"
-                    >
-                      <AlertTriangle className="size-5 text-[#e5c06a] shrink-0 mt-0.5 animate-bounce" />
-                      <div className="text-xs">
-                        <span className="font-bold text-[#e5c06a] uppercase tracking-wider block mb-0.5">
-                          🔒 Payment Screenshot Required
-                        </span>
-                        Please upload your ₹49 payment screenshot below to unlock the External Delegates WhatsApp Group!
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
                 {/* Submission Error Banner */}
                 <AnimatePresence>
@@ -701,97 +621,6 @@ export default function BoardroomBillionairesPage() {
                         )}
                       </div>
                     </div>
-
-                    {/* External Track Payment & Screenshot Section */}
-                    {selectedTrack === 'external' && (
-                      <div className="rounded-xl border-2 border-[#8c6d3b] bg-[#3b2313] p-6 space-y-6">
-                        <div className="flex flex-col sm:row items-center justify-between gap-4 pb-4 border-b border-[#8c6d3b]/40">
-                          <div>
-                            <span className="text-xs font-bold uppercase tracking-widest text-[#e5c06a]">Payment Gateway</span>
-                            <h4 className="font-display text-lg font-black text-[#fcf8f0] mt-0.5">Advance Registration Fee: ₹49</h4>
-                            <p className="text-xs text-[#d3caad] mt-1">UPI ID: <span className="font-mono text-[#e5c06a] font-bold">prathamsunilshinde@oksbi</span></p>
-                          </div>
-
-                          {/* Clickable UPI Payment QR Image */}
-                          <div 
-                            onClick={() => setShowPaymentModal(true)}
-                            className="w-36 h-44 bg-white p-2 rounded-xl border-2 border-[#8c6d3b] shrink-0 shadow-lg cursor-pointer hover:border-[#e5c06a] hover:scale-105 transition-all group relative overflow-hidden"
-                            title="Click to launch UPI app or expand QR Code"
-                          >
-                            <img
-                              src="/assets/qr/upi_payment_qr.png"
-                              alt="UPI Payment QR Code"
-                              className="w-full h-full object-contain rounded-lg"
-                            />
-                            <div className="absolute inset-0 bg-[#140d08]/70 flex flex-col items-center justify-center p-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5c06a] bg-[#3b2313] px-2 py-1 rounded border border-[#8c6d3b]">
-                                Click to Pay / Expand 🔍
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* File Upload for Payment Screenshot */}
-                        <div id="payment-screenshot-box">
-                          <label className="block text-xs font-bold uppercase tracking-wider text-[#d3caad] mb-2 flex items-center justify-between">
-                            <span>Upload Payment Screenshot *</span>
-                            {paymentScreenshot ? (
-                              <span className="text-[#e5c06a] font-bold flex items-center gap-1">
-                                <Unlock className="size-3.5" /> Group Unlocked
-                              </span>
-                            ) : (
-                              <span className="text-[#e5c06a]/80 font-semibold flex items-center gap-1">
-                                <Lock className="size-3.5" /> Unlocks WhatsApp Group
-                              </span>
-                            )}
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              required
-                              onChange={handleFileChange}
-                              className="hidden"
-                              id="payment-screenshot-input"
-                            />
-                            <label
-                              htmlFor="payment-screenshot-input"
-                              className={`flex items-center justify-between px-4 py-3.5 rounded-lg bg-[#2c190e] border-2 border-dashed text-xs text-[#d3caad] cursor-pointer transition-all ${
-                                qrLockWarning
-                                  ? 'border-[#e5c06a] ring-4 ring-[#e5c06a]/40 shadow-lg'
-                                  : 'border-[#8c6d3b] hover:border-[#e5c06a]'
-                              }`}
-                            >
-                              <span className="flex items-center gap-2 truncate">
-                                {paymentScreenshot ? (
-                                  <>
-                                    <Check className="size-4 text-[#e5c06a] shrink-0" />
-                                    <span className="truncate text-[#fcf8f0] font-medium">{paymentScreenshot.name}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="size-4 text-[#e5c06a] shrink-0" />
-                                    <span>Choose Payment Screenshot (PNG/JPG)</span>
-                                  </>
-                                )}
-                              </span>
-                              <span className="px-2.5 py-1 rounded bg-[#3b2313] text-[10px] font-bold uppercase text-[#e5c06a] shrink-0">Browse</span>
-                            </label>
-                          </div>
-
-                          {/* Screenshot Thumbnail Preview */}
-                          {paymentScreenshotPreview && (
-                            <div className="mt-3 flex items-center gap-3 p-2 rounded-lg bg-[#2c190e] border border-[#8c6d3b]/40">
-                              <img src={paymentScreenshotPreview} alt="Screenshot Preview" className="size-12 object-cover rounded border border-[#8c6d3b]" />
-                              <div className="text-[11px] text-[#d3caad] truncate">
-                                <div className="font-bold text-[#fcf8f0] truncate">{paymentScreenshot?.name}</div>
-                                <div className="text-[#e5c06a] font-semibold">✓ WhatsApp Group Unlocked</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     <button
                       type="submit"
@@ -1017,88 +846,6 @@ export default function BoardroomBillionairesPage() {
                 >
                   Close
                 </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* UPI Payment Enlarged Modal */}
-        <AnimatePresence>
-          {showPaymentModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#140d08]/85 backdrop-blur-md overflow-y-auto"
-            >
-              <div className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border-4 border-[#3b2313] bg-[#4a2e1b] p-6 text-center text-[#fcf8f0] shadow-2xl my-auto">
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="absolute top-4 right-4 text-[#d3caad] hover:text-[#fcf8f0]"
-                >
-                  <X className="size-5" />
-                </button>
-                <div className="text-xs font-bold uppercase tracking-widest text-[#e5c06a] mb-1">
-                  UPI Payment Gateway
-                </div>
-                <h4 className="font-display text-2xl font-black text-[#fcf8f0]">
-                  Advance Fee: ₹49
-                </h4>
-                <p className="text-xs text-[#d3caad] mt-1 mb-4">
-                  Scan with GPay, PhonePe, Paytm or tap below to open UPI App
-                </p>
-
-                {/* Enlarged QR Image */}
-                <div className="w-full max-w-[280px] bg-white p-2 rounded-2xl mx-auto shadow-2xl flex items-center justify-center border-2 border-[#8c6d3b] overflow-hidden">
-                  <img
-                    src="/assets/qr/upi_payment_qr.png"
-                    alt="Enlarged UPI Payment QR Code"
-                    className="w-full h-auto object-contain rounded-xl"
-                  />
-                </div>
-
-                <div className="mt-4 p-2.5 rounded-lg bg-[#3b2313] border border-[#8c6d3b] flex items-center justify-between gap-2">
-                  <div className="text-left">
-                    <div className="text-[10px] uppercase font-bold text-[#d3caad]">Payee UPI ID</div>
-                    <div className="text-xs font-mono font-bold text-[#e5c06a] select-all">
-                      prathamsunilshinde@oksbi
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText("prathamsunilshinde@oksbi");
-                      setCopiedUpi(true);
-                      setTimeout(() => setCopiedUpi(false), 2000);
-                    }}
-                    className="px-2.5 py-1 rounded bg-[#4a2e1b] border border-[#8c6d3b] text-[10px] font-bold text-[#e5c06a] uppercase hover:bg-[#8c6d3b] hover:text-[#1c120c] transition-colors shrink-0"
-                  >
-                    {copiedUpi ? "✓ Copied" : "Copy ID"}
-                  </button>
-                </div>
-
-                <div className="mt-5 space-y-2">
-                  {/* Mobile Only: Direct UPI App Launch Button */}
-                  <a
-                    href="upi://pay?pa=prathamsunilshinde@oksbi&pn=Pratham%20Shinde&am=49&cu=INR&tn=Boardroom%20Billionaires%20Registration"
-                    className="sm:hidden block w-full py-3 rounded-lg bg-[#e5c06a] text-[#1c120c] font-black text-xs uppercase tracking-wider hover:bg-[#fcf8f0] transition-colors shadow-lg"
-                  >
-                    Open UPI App to Pay ₹49 →
-                  </a>
-
-                  {/* Desktop Only: Scan QR Guidance */}
-                  <div className="hidden sm:block p-2.5 rounded-lg bg-[#3b2313] border border-[#8c6d3b]/50 text-center">
-                    <p className="text-[11px] text-[#d3caad]">
-                      Scan the QR code above with <span className="text-[#e5c06a] font-bold">GPay / PhonePe / Paytm</span> on your mobile device to complete payment.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowPaymentModal(false)}
-                    className="w-full py-2.5 rounded-lg border-2 border-[#8c6d3b] bg-[#3b2313] text-[#fcf8f0] font-bold text-xs uppercase tracking-wider hover:border-[#e5c06a] transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
               </div>
             </motion.div>
           )}
